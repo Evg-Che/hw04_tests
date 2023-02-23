@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Последние обновления на сайте{% endblock %}
+{% block content %}
+  <div class="container">
+    <h1>Последние обновления на сайте</h1>
+    <article>
+        {% for post in page_obj %}
+            {% include 'includes/post_author.html' %}
+            {% if post.group %}
+                <a href="{% url 'posts:group_list' post.group.slug %}">все записи группы</a>
+            {% endif %}
+        {% endfor %}
+        {% include 'posts/includes/paginator.html' %}
+    </article>
+  </div>
+{% endblock %}
