@@ -1,11 +1,9 @@
 from http import HTTPStatus
 
-from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
+from django.urls import reverse
 
-from ..models import Group, Post
-
-User = get_user_model()
+from ..models import Group, Post, User
 
 
 class PostURLTests(TestCase):
@@ -32,50 +30,71 @@ class PostURLTests(TestCase):
         self.authorized_user.force_login(self.user)
 
     def test_urls(self):
-        templates_url_names = {
-            '/': 'posts/index.html',
-            f'/group/{self.group.slug}/': 'posts/group_list.html',
-            f'/profile/{self.user.username}/': 'posts/profile.html',
-            f'/posts/{self.post.pk}/': 'posts/post_detail.html',
-            '/create/': 'posts/create_post.html',
-            f'/posts/{self.post.pk}/edit/': 'posts/create_post.html',
+        templates_page_names = {
+            reverse('posts:index'): 'posts/index.html',
+            reverse('posts:group_list', kwargs={'slug': self.group.slug}): (
+                'posts/group_list.html'
+            ),
+            reverse('posts:profile', kwargs={'username': (
+                self.user.username)}): 'posts/profile.html',
+            reverse('posts:post_create'): 'posts/create_post.html',
+            reverse('posts:post_detail', kwargs={'post_id': (
+                self.post.pk)}): 'posts/post_detail.html',
+            reverse('posts:post_edit', kwargs={'post_id': (
+                self.post.pk)}): 'posts/create_post.html',
         }
-        for url, template, in templates_url_names.items():
-            with self.subTest(url=url):
-                response = self.authorized_user.get(url)
+        for reverse_name, template in templates_page_names.items():
+            with self.subTest(reverse_name=reverse_name):
+                response = self.authorized_user.get(reverse_name)
                 self.assertTemplateUsed(response, template)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_urls_for_guest(self):
-        url_names = {
-            '/',
-            f'/group/{self.group.slug}/',
-            f'/profile/{self.user.username}/',
-            f'/posts/{self.post.pk}/',
+        templates_page_names = {
+            reverse('posts:index'): 'posts/index.html',
+            reverse('posts:group_list', kwargs={'slug': self.group.slug}): (
+                'posts/group_list.html'
+            ),
+            reverse('posts:profile', kwargs={'username': (
+                self.user.username)}): 'posts/profile.html',
+            reverse('posts:post_detail', kwargs={'post_id': (
+                self.post.pk)}): 'posts/post_detail.html',
         }
-        for url in url_names:
+        for url in templates_page_names:
             with self.subTest():
                 response = self.guest_user.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_create_and_post_edit_for_authorized(self):
-        url_names = {
-            '/create/',
-            f'/posts/{self.post.pk}/edit/',
+        templates_page_names = {
+            reverse('posts:post_create'),
+            reverse('posts:post_edit', args=[self.post.pk])
         }
-        for url in url_names:
+        for url in templates_page_names:
             with self.subTest():
                 response = self.guest_user.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_create_url_redirect_guest(self):
-        response = self.guest_user.get('/create/')
-        self.assertRedirects(response, '/auth/login/?next=/create/')
+        response = self.guest_user.get(
+            reverse('posts:post_create'))
+        self.assertRedirects(
+            response,
+            f"{reverse('users:login')}?next={reverse('posts:post_create')}"
+        )
 
     def test_post_edit_url_redirect_guest(self):
-        response = self.guest_user.get(f'/posts/{self.post.pk}/edit/')
+        adress = 'posts:post_edit'
+        response = self.guest_user.get(
+            reverse(
+                adress,
+                kwargs={'post_id': self.post.pk},
+            )
+        )
         self.assertRedirects(
-            response, f'/auth/login/?next=/posts/{self.post.pk}/edit/')
+            response,
+            f"{reverse('users:login')}?next={reverse(adress,kwargs={'post_id': self.post.pk})}"
+        )
 
     def test_wrong_url_returns_404(self):
         response = self.client.get('/non-existent_page/')

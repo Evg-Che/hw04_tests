@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 
 User = get_user_model()
+TEXT_LIMIT = 15
 
 
 class Group(models.Model):
@@ -54,7 +55,6 @@ class Post(models.Model):
     )
 
     def __str__(self):
-        TEXT_LIMIT = 15
         return self.text[:TEXT_LIMIT]
 
     class Meta:

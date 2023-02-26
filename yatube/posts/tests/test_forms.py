@@ -19,8 +19,13 @@ class PostFormTests(TestCase):
             title='Тестовая группа_2',
             slug='group_test_2'
         )
+        cls.group_3 = Group.objects.create(
+            title='Тестовая группа_3',
+            slug='group_test_3'
+        )
 
     def setUp(self):
+        self.guest_user = Client()
         self.authorized_user = Client()
         self.authorized_user.force_login(self.user)
         self.post = Post.objects.create(
@@ -68,3 +73,19 @@ class PostFormTests(TestCase):
         post = Post.objects.get(id=self.post.pk)
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.group_id, form_data['group'])
+    
+    def test_unauthorized_user_create_post(self):
+        posts_count = Post.objects.count()
+        form_data = {
+            'text': 'Новый пост',
+            'group': self.group_3.id,
+        }
+        response = self.guest_user.post(
+            reverse('posts:post_create'),
+            data=form_data,
+            follow=True
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        redirect = reverse('login') + '?next=' + reverse('posts:post_create')
+        self.assertRedirects(response, redirect)
+        self.assertEqual(Post.objects.count(), posts_count)
