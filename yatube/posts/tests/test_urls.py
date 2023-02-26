@@ -86,11 +86,7 @@ class PostURLTests(TestCase):
     def test_post_edit_url_redirect_guest(self):
         redir = reverse('users:login')
         redir_2 = reverse('posts:post_edit', kwargs={'post_id': self.post.pk})
-        response = self.guest_user.get(
-            reverse('posts:post_edit',
-                    kwargs={'post_id': self.post.pk},
-                    )
-        )
+        response = self.guest_user.get(redir_2)
         self.assertRedirects(
             response,
             f"{redir}?next={redir_2}")
