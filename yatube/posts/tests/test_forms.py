@@ -73,7 +73,7 @@ class PostFormTests(TestCase):
         post = Post.objects.get(id=self.post.pk)
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.group_id, form_data['group'])
-    
+
     def test_unauthorized_user_create_post(self):
         posts_count = Post.objects.count()
         form_data = {
