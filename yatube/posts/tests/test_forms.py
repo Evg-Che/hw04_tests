@@ -89,3 +89,27 @@ class PostFormTests(TestCase):
         redirect = reverse('login') + '?next=' + reverse('posts:post_create')
         self.assertRedirects(response, redirect)
         self.assertEqual(Post.objects.count(), posts_count)
+
+    def test_unauthorized_user_edit(self):
+        redir = reverse('users:login')
+        redir_2 = reverse('posts:post_edit', kwargs={'post_id': self.post.pk})
+        posts_count = Post.objects.count()
+        form_data = {
+            'text': 'Тестовый пост',
+            'group': self.group_3.id,
+        }
+        response = self.guest_user.post(
+            redir_2,
+            data=form_data,
+            follow=True,
+        )
+        self.assertEqual(Post.objects.count(), posts_count)
+        self.assertRedirects(
+            response,
+            f"{redir}?next={redir_2}")
+
+        self.assertTrue(
+            Post.objects.filter(
+                text='Тестовый пост',
+            ).exists()
+        )
